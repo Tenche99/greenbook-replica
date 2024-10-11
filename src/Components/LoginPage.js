@@ -39,7 +39,7 @@ const LoginPage = () => {
             console.log("Token stored in localStorage:", token);
             
 
-            navigate('/home');
+            navigate('/Home');
         } catch (error) {
             // Handle errors from the API
             console.error('Login error:', error.response ? error.response.data : error.message);
