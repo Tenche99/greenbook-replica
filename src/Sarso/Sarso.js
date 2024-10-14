@@ -6,8 +6,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Button,
+  TableRow, Autocomplete, TextField, Box, Typography,
 } from "@mui/material";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
@@ -19,6 +18,12 @@ const Sarso = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [authRegions, setAuthRegions] = useState([]);
+  const [selectedAuthRegion, setSelectedAuthRegion] = useState(null);
+  const [formNumber, setFormNumber] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [fatherName, setFatherName] = useState('');
+  const [receivedDate, setReceivedDate] = useState('');
 
   const navigate = useNavigate();
 
@@ -68,42 +73,81 @@ const Sarso = () => {
     setOpenDropdown(null);
   };
 
- 
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost/api/MadebAuthRegionVM/GetMadebsByType/MadebType%3D1",
+        const response = await axios.get(
+          "http://localhost/api/MadebAuthRegionVM/GetMadebsByType/MadebType%3D1", 
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
         setData(response.data);
       } catch (error) {
         if (error.response && error.response.status === 401) {
           console.error("Unauthorized - Invalid or expired token");
         }
-        console.error("Error fetching data:", error);
         setError(error.message || "Error fetching data");
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+  }, []); // No conditional useEffect
+
+  // Second useEffect for fetching authority regions
+  useEffect(() => {
+    const fetchAuthRegions = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost/api/Madeb/GetNewEmptyMadeb/?nMadebTypeId=1", 
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.data && Array.isArray(response.data.authRegions)) {
+          setAuthRegions(response.data.authRegions);
+        } else {
+          console.error("Unexpected API response structure", response.data);
+          setAuthRegions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching authority regions:", error);
+        setAuthRegions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuthRegions();
   }, []);
 
-  if (loading) {
-    return <CircularProgress />;
-  }
+  const handleSearch = () => {
+    console.log("Searching with:", {
+      formNumber,
+      fullName,
+      fatherName,
+      selectedAuthRegion,
+      receivedDate,
+    });
+  };
 
-  if (error) {
-    return <p>{error}</p>;
-  }
+  // Function to handle "Enter" key press to trigger search
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
 
   return (
     <>
@@ -524,20 +568,106 @@ onMouseLeave={handleMouseLeave}
         </button>
       </div>
     </header>
-        
+    {/* ------------------------------------------------------>     */}
+    <Box sx={{ p: 2 }}>
+      
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',  // Change to row for single-line layout
+          gap: 2,
+          alignItems: 'center', // Align items to center vertically
+          flexWrap: 'wrap',     // Wrap if screen size is small
+        }}
+      >
+        <TextField
+          label="Form No"
+          variant="standard"
+          value={formNumber}
+          onChange={(e) => setFormNumber(e.target.value)}
+          onKeyDown={handleKeyDown} // Attach keydown handler
+          sx={{ width: '200px' }} // Adjust width as needed
+        />
+        <TextField
+          label="Full Name"
+          variant="standard"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          onKeyDown={handleKeyDown} // Attach keydown handler
+          sx={{ width: '200px' }} // Adjust width as needed
+        />
+        <TextField
+          label="Father Name"
+          variant="standard"
+          value={fatherName}
+          onChange={(e) => setFatherName(e.target.value)}
+          onKeyDown={handleKeyDown} // Attach keydown handler
+          sx={{ width: '200px' }} // Adjust width as needed
+        />
+        <TextField
+          label="Received Date"
+          type="date"
+          variant="standard"
+          InputLabelProps={{
+            shrink: true,
+          }}
+          value={receivedDate}
+          onChange={(e) => setReceivedDate(e.target.value)}
+          onKeyDown={handleKeyDown} // Attach keydown handler
+          sx={{ width: '200px' }} // Adjust width as needed
+        />
+        <Autocomplete
+          options={authRegions}
+          getOptionLabel={(option) => option.sAuthRegion || ""}
+          value={selectedAuthRegion}
+          onChange={(event, newValue) => setSelectedAuthRegion(newValue)}
+          loading={loading}
+          disableClearable
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Authority Region"
+              variant="standard"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              onKeyDown={handleKeyDown} // Attach keydown handler
+              sx={{ width: '200px' }} // Adjust width as needed
+            />
+          )}
+        />
+      </Box>
+    </Box>
         
     <div>
+    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+        Sarso Madeb
+      </Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Form Number</TableCell>
-              <TableCell>Received Date</TableCell>
-              <TableCell>Authority Region</TableCell>
-              <TableCell>Full Name</TableCell>
-              <TableCell>Father's Name</TableCell>
-              <TableCell>Document Status</TableCell>
-              <TableCell>Madeb Status</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Form Number</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Received Date</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Authority</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Full Name</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Father's Name</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Saney Form No</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Document Attached</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Book Serial No</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>GB ID</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Issue Action Date</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Issue Action</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Return Date</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Reject Date</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Email Sent</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -547,9 +677,18 @@ onMouseLeave={handleMouseLeave}
                 <TableCell>{row.madeb.dtReceived}</TableCell>
                 <TableCell>{row.sAuthRegion}</TableCell>
                 <TableCell>{row.madeb.sName}</TableCell>
-                <TableCell>{row.madeb.sFathersName || "N/A"}</TableCell>
-                <TableCell>{row.sTypeIssued}</TableCell>
+                <TableCell>{row.madeb.sFathersName}</TableCell>
+                <TableCell>{row.madeb.nSaneyFormNo}</TableCell>
+                <TableCell>{row.madeb.sDocumentAttached}</TableCell>
                 <TableCell>{row.sMadebStatus}</TableCell>
+                <TableCell>{row.madeb.nCurrentGBSno}</TableCell>
+                <TableCell>{row.madeb.sGBID}</TableCell>
+                <TableCell>{row.madeb.dtIssueAction}</TableCell>
+                <TableCell>{row.sTypeIssued}</TableCell>
+                <TableCell>{row.madeb.dtReturnEmail}</TableCell>
+                <TableCell>{row.madeb.dtReject}</TableCell>
+                <TableCell>{row.madeb.dtEmailSend}</TableCell>
+                
               </TableRow>
             ))}
           </TableBody>
