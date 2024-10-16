@@ -13,17 +13,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import projectLogo from "../assets/Images/CTALogo.png";
 
+const searchArray = [];
+
 const Sarso = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [authRegions, setAuthRegions] = useState([]);
-  const [selectedAuthRegion, setSelectedAuthRegion] = useState(null);
-  const [formNumber, setFormNumber] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [fatherName, setFatherName] = useState('');
-  const [receivedDate, setReceivedDate] = useState('');
+  const [AuthRegion, setAuthRegions] = useState([]);
+  const [sAuthRegion, setSelectedAuthRegion] = useState(null);
+  const [nFormNumber, setFormNumber] = useState('');
+  const [sName, setFullName] = useState('');
+  const [sFathersName, setFatherName] = useState('');
+  const [dtReceived, setReceivedDate] = useState('');
 
   const navigate = useNavigate();
 
@@ -45,14 +47,13 @@ const Sarso = () => {
       }); 
   
       if (response.ok) {
-        // Clear token from localStorage
         localStorage.removeItem("token");
   
-        // Redirect to login page
+        
         navigate("/login");
       } else if (response.status === 401) {
         console.error("Unauthorized: Invalid or expired token");
-        // Optionally redirect to login page
+        
         navigate("/login");
       } else {
         console.error("Logout failed:", response.statusText);
@@ -73,7 +74,6 @@ const Sarso = () => {
     setOpenDropdown(null);
   };
 
-  useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -97,10 +97,10 @@ const Sarso = () => {
       }
     };
 
-    fetchData();
-  }, []); // No conditional useEffect
+    useEffect(() => {
+      fetchData();
+    }, []);
 
-  // Second useEffect for fetching authority regions
   useEffect(() => {
     const fetchAuthRegions = async () => {
       setLoading(true);
@@ -132,16 +132,51 @@ const Sarso = () => {
   }, []);
 
   const handleSearch = () => {
-    console.log("Searching with:", {
-      formNumber,
-      fullName,
-      fatherName,
-      selectedAuthRegion,
-      receivedDate,
-    });
-  };
+    const searchRequest = {
+      nFormNumber: nFormNumber ? nFormNumber : null,
+      dtReceived: dtReceived ? dtReceived : null,
+      sAuthRegion: sAuthRegion ? sAuthRegion.sAuthRegion : null,
+      sName: sName ? sName : null,
+      sFathersName: sFathersName ? sFathersName : null,
+    };
 
-  // Function to handle "Enter" key press to trigger search
+    console.log("Search Request:", searchRequest);
+    searchArray.push(searchRequest);
+    console.log("Request length: ", searchArray.length);
+    if (searchArray.length === 1) {
+      processRequest();
+    }
+    function processRequest() {
+      const currentRequest = searchArray[0];  // Get the first request to process
+    console.log("Processing request:", currentRequest);
+
+    const token = localStorage.getItem("token");
+
+    // Make an axios POST request
+    axios.post("http://localhost/api/MadebAuthRegionVM/ColumnSearchMadeb/madebType=1",
+      currentRequest,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    )
+      .then(response => {
+        console.log("Response from server:", response.data);
+        setData(response.data);
+        // You can handle response data here
+      })
+      .catch(error => {
+        console.error("Error making POST request:", error);
+        // Handle any errors here
+      })
+      .finally(() => {
+        // After request is processed, you can clear the array or remove processed requests
+        searchArray.shift();  // Remove the processed request
+      });
+    }
+  };
+  
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -583,7 +618,7 @@ onMouseLeave={handleMouseLeave}
         <TextField
           label="Form No"
           variant="standard"
-          value={formNumber}
+          value={nFormNumber}
           onChange={(e) => setFormNumber(e.target.value)}
           onKeyDown={handleKeyDown} // Attach keydown handler
           sx={{ width: '200px' }} // Adjust width as needed
@@ -591,7 +626,7 @@ onMouseLeave={handleMouseLeave}
         <TextField
           label="Full Name"
           variant="standard"
-          value={fullName}
+          value={sName}
           onChange={(e) => setFullName(e.target.value)}
           onKeyDown={handleKeyDown} // Attach keydown handler
           sx={{ width: '200px' }} // Adjust width as needed
@@ -599,7 +634,7 @@ onMouseLeave={handleMouseLeave}
         <TextField
           label="Father Name"
           variant="standard"
-          value={fatherName}
+          value={sFathersName}
           onChange={(e) => setFatherName(e.target.value)}
           onKeyDown={handleKeyDown} // Attach keydown handler
           sx={{ width: '200px' }} // Adjust width as needed
@@ -611,15 +646,15 @@ onMouseLeave={handleMouseLeave}
           InputLabelProps={{
             shrink: true,
           }}
-          value={receivedDate}
+          value={dtReceived}
           onChange={(e) => setReceivedDate(e.target.value)}
           onKeyDown={handleKeyDown} // Attach keydown handler
           sx={{ width: '200px' }} // Adjust width as needed
         />
         <Autocomplete
-          options={authRegions}
+          options={AuthRegion}
           getOptionLabel={(option) => option.sAuthRegion || ""}
-          value={selectedAuthRegion}
+          value={sAuthRegion}
           onChange={(event, newValue) => setSelectedAuthRegion(newValue)}
           loading={loading}
           disableClearable
