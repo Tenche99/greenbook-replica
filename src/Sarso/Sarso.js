@@ -29,6 +29,10 @@ const Sarso = () => {
 
   const navigate = useNavigate();
 
+  const handleButtonClick = () => {
+    navigate('/Sarso/AddSarsoMadeb');
+  };
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -601,6 +605,14 @@ onMouseLeave={handleMouseLeave}
         >
           Logout
         </button>
+        <div style={{ position: 'fixed', top: '50px', right: '200px' }}>
+      <button
+      onClick={handleButtonClick} // Set the click handler
+      style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+      >
+        Click Me
+        </button>
+    </div>
       </div>
     </header>
     {/* ------------------------------------------------------>     */}
@@ -679,7 +691,6 @@ onMouseLeave={handleMouseLeave}
         />
       </Box>
     </Box>
-        
     <div>
     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
         Sarso Madeb
@@ -735,3 +746,195 @@ onMouseLeave={handleMouseLeave}
 };
 
 export default Sarso;
+
+//-------------------------------------------------------------------->
+//Creating add sarso madeb modal!!!!!
+
+// import React, { useState, useEffect } from 'react';
+// import { Modal, Box, Button, TextField, MenuItem, CircularProgress, FormControlLabel, Checkbox } from '@mui/material';
+// import axios from 'axios';
+
+// const SarsoForm = () => {
+//   const [open, setOpen] = useState(false);
+//   const [loading, setLoading] = useState(false);
+//   const [formNumber, setFormNumber] = useState('');
+//   const [dtReceived, setReceivedDate] = useState('');
+//   const [sAuthRegion, setSelectedAuthRegion] = useState('');
+//   const [authRegions, setAuthRegions] = useState([]);
+//   const [sName, setFullName] = useState('');
+//   const [sFathersName, setFatherName] = useState('');
+//   const [madebStatus] = useState('In progress');  // Default status is 'In progress'
+//   const [statusRemarks, setStatusRemarks] = useState('');
+//   const [saneyFormNo, setSaneyFormNo] = useState('');
+//   const [documentAttached, setDocumentAttached] = useState(false);
+
+//   // Fetch the new form number and authority regions when the modal opens
+//   useEffect(() => {
+//     const fetchFormNumberAndRegions = async () => {
+//       setLoading(true);
+//       try {
+//         const token = localStorage.getItem('token');
+//         const response = await axios.get('http://localhost/api/Madeb/GetNewEmptyMadeb/?nMadebTypeId=1', {
+//           headers: { Authorization: `Bearer ${token}` },
+//         });
+//         setFormNumber(response.data.nFormNumber);
+//         setAuthRegions(response.data.authRegions);
+//       } catch (error) {
+//         console.error('Error fetching form number or authority regions:', error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     if (open) {
+//       fetchFormNumberAndRegions();
+//     }
+//   }, [open]);
+
+//   const handleOpen = () => setOpen(true);
+//   const handleClose = () => setOpen(false);
+
+//   const handleSave = async () => {
+//     const payload = {
+//       nFormNumber: formNumber,
+//       dtReceived,
+//       sAuthRegion: sAuthRegion ? sAuthRegion.sAuthRegion : null,
+//       sName,
+//       sFathersName,
+//       madebStatus,
+//       statusRemarks,
+//       saneyFormNo,
+//       documentAttached,
+//     };
+
+//     try {
+//       const token = localStorage.getItem('token');
+//       console.log("---------> Chemes:", token);
+//    await axios.post('http://localhost/api/Madeb/AddMadeb/', payload, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       alert('Madeb added successfully!');
+//       handleClose();  // Close the modal after saving
+//     } catch (error) {
+//       console.error('Error adding madeb:', error);
+//     }
+//   };
+
+//   return (
+//     <>
+//       {/* Button to open form, positioned at the top right */}
+//       <Button variant="contained" onClick={handleOpen} style={{ position: 'absolute', top: 20, right: 20 }}>
+//         Add Madeb
+//       </Button>
+
+//       {/* Modal for the form */}
+//       <Modal open={open} onClose={handleClose}>
+//         <Box
+//           sx={{
+//             width: 600,
+//             bgcolor: 'background.paper',
+//             border: '2px solid #000',
+//             boxShadow: 24,
+//             p: 4,
+//             m: 'auto',
+//             mt: 10,
+//           }}
+//         >
+//           <h2>Add New Madeb</h2>
+
+//           {/* Form fields */}
+//           {loading ? <CircularProgress /> : (
+//             <>
+//               <TextField
+//                 label="Form Number"
+//                 value={formNumber}
+//                 fullWidth
+//                 margin="normal"
+//                 disabled
+//               />
+
+//               <TextField
+//                 label="Received Date"
+//                 type="date"
+//                 value={dtReceived}
+//                 onChange={(e) => setReceivedDate(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//                 InputLabelProps={{ shrink: true }}
+//               />
+
+//               <TextField
+//                 select
+//                 label="Authority Region"
+//                 value={sAuthRegion}
+//                 onChange={(e) => setSelectedAuthRegion(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//               >
+//                 {authRegions.map((region) => (
+//                   <MenuItem key={region.id} value={region}>
+//                     {region.sAuthRegion}
+//                   </MenuItem>
+//                 ))}
+//               </TextField>
+
+//               <TextField
+//                 label="Name"
+//                 value={sName}
+//                 onChange={(e) => setFullName(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//               />
+
+//               <TextField
+//                 label="Father's Name"
+//                 value={sFathersName}
+//                 onChange={(e) => setFatherName(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//               />
+
+//               <TextField
+//                 label="Status Remarks"
+//                 value={statusRemarks}
+//                 onChange={(e) => setStatusRemarks(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//               />
+
+//               <TextField
+//                 label="Saney Form No"
+//                 value={saneyFormNo}
+//                 onChange={(e) => setSaneyFormNo(e.target.value)}
+//                 fullWidth
+//                 margin="normal"
+//               />
+
+//               <FormControlLabel
+//                 control={
+//                   <Checkbox
+//                     checked={documentAttached}
+//                     onChange={(e) => setDocumentAttached(e.target.checked)}
+//                   />
+//                 }
+//                 label="Document Attached"
+//               />
+
+//               {/* Buttons */}
+//               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+//                 <Button variant="contained" color="primary" onClick={handleSave}>
+//                   Save
+//                 </Button>
+//                 <Button variant="contained" color="secondary" onClick={handleClose}>
+//                   Cancel
+//                 </Button>
+//               </Box>
+//             </>
+//           )}
+//         </Box>
+//       </Modal>
+//     </>
+//   );
+// };
+
+// export default SarsoForm;

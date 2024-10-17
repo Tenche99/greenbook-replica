@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'; // Use Navigate for redirects
 import './App.css';
 import PrivateRoute from './PrivateRoute'; // Ensure PrivateRoute works for protected routes
+import AddSarsoMadeb from '../src/Sarso/AddSarsoMadeb';
 
 const LoginPage = lazy(() => import('./Components/LoginPage'));
 const Home = lazy(() => import('./Home/Home'));
@@ -41,6 +42,14 @@ const App = () => {
             element={
               <PrivateRoute>
                 <Sarso />
+              </PrivateRoute>
+            } 
+          />
+          <Route
+            path="/Sarso/AddSarsoMadeb"
+            element={
+              <PrivateRoute>
+                <AddSarsoMadeb />
               </PrivateRoute>
             } 
           />
