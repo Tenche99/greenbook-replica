@@ -95,12 +95,12 @@ const SarsoForm = () => {
 
   const handleSave = async () => {
     const token = localStorage.getItem("token");
-
+  
     if (!token) {
       console.error("No token found. You need to log in.");
       return;
     }
-
+  
     const payload = {
       dtReceived: dtReceived || null,
       nAuthRegionID: sAuthRegion ? sAuthRegion.id : null,
@@ -112,19 +112,36 @@ const SarsoForm = () => {
       sMadebStatusRemark: statusRemarks || "",
       sName: sName || "",
     };
-
+  
     try {
       const response = await axios.post(
         "http://localhost/api/Madeb/AddMadeb/",
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Make sure the token is correctly set
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      //fetchData();
+      alert("Madeb added successfully 💥")
       console.log("Madeb added successfully", response.data);
+      
+      // Close the form after saving
+      setOpen(false);
+  
+      // Reset the form fields (optional)
+      setFormNumber("");
+      setReceivedDate("");
+      setSelectedAuthRegion("");
+      setFullName("");
+      setFatherName("");
+      setStatusRemarks("");
+      setSaneyFormNo("");
+      setDocumentAttached(false);
+  
+      // Refresh the table data to reflect the new entry
+      fetchData();
+      
     } catch (error) {
       console.error(
         "Error adding Madeb:",
@@ -132,7 +149,6 @@ const SarsoForm = () => {
       );
     }
   };
-
   return (
     <>
       {/* Button to open form, positioned at the top right */}

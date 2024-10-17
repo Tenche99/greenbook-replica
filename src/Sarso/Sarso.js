@@ -6,17 +6,20 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow, Autocomplete, TextField, Box, Typography,
+  TableRow, Autocomplete, TextField, Box, Typography,Modal, MenuItem, FormControlLabel, Checkbox, Button,
 } from "@mui/material";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import projectLogo from "../assets/Images/CTALogo.png";
 
 const searchArray = [];
 
 const Sarso = () => {
   const [data, setData] = useState([]);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -26,7 +29,9 @@ const Sarso = () => {
   const [sName, setFullName] = useState('');
   const [sFathersName, setFatherName] = useState('');
   const [dtReceived, setReceivedDate] = useState('');
-
+  const [statusRemarks, setStatusRemarks] = useState("");
+  const [saneyFormNo, setSaneyFormNo] = useState("");
+  const [documentAttached, setDocumentAttached] = useState(false);
   const navigate = useNavigate();
 
   const handleButtonClick = () => {
@@ -105,85 +110,152 @@ const Sarso = () => {
       fetchData();
     }, []);
 
-  useEffect(() => {
-    const fetchAuthRegions = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost/api/Madeb/GetNewEmptyMadeb/?nMadebTypeId=1", 
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+    useEffect(() => {
+      const fetchAuthRegions = async () => {
+        setLoading(true);
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.get(
+            "http://localhost/api/Madeb/GetNewEmptyMadeb/?nMadebTypeId=1", 
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (response.data && Array.isArray(response.data.authRegions)) {
+            setAuthRegions(response.data.authRegions);
+            setFormNumber(response.data.nFormNumber);
+          } else {
+            console.error("Unexpected API response structure", response.data);
+            setAuthRegions([]);
           }
-        );
-        if (response.data && Array.isArray(response.data.authRegions)) {
-          setAuthRegions(response.data.authRegions);
-        } else {
-          console.error("Unexpected API response structure", response.data);
+        } catch (error) {
+          console.error("Error fetching authority regions:", error);
           setAuthRegions([]);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching authority regions:", error);
-        setAuthRegions([]);
-      } finally {
-        setLoading(false);
+      };
+  
+      fetchAuthRegions();
+    }, []);
+    
+
+    const handleSearch = () => {
+      const searchRequest = {
+        nFormNumber: nFormNumber ? nFormNumber : null,
+        dtReceived: dtReceived ? dtReceived : null,
+        sAuthRegion: sAuthRegion ? sAuthRegion.sAuthRegion : null,
+        sName: sName ? sName : null,
+        sFathersName: sFathersName ? sFathersName : null,
+      };
+    
+      console.log("Search Request:", searchRequest);
+      searchArray.push(searchRequest);
+      console.log("Request length: ", searchArray.length);
+      if (searchArray.length === 1) {
+        processRequest();
+      }
+    
+      function processRequest() {
+        const currentRequest = searchArray[0];  // Get the first request to process
+        console.log("Processing request:", currentRequest);
+    
+        const token = localStorage.getItem("token");
+    
+        // Make an axios POST request
+        axios
+          .post(
+            "http://localhost/api/MadebAuthRegionVM/ColumnSearchMadeb/madebType=1",
+            currentRequest,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          .then((response) => {
+            console.log("Response from server:", response.data);
+            if (Array.isArray(response.data)) {
+              setData(response.data);  // Only set data if it's an array
+            } else {
+              setData([]);  // Fallback to empty array if data is not an array
+            }
+          })
+          .catch((error) => {
+            console.error("Error making POST request:", error);
+            setData([]);  // Set to an empty array on error to prevent breaking the UI
+          })
+          .finally(() => {
+            searchArray.shift();  // Remove the processed request
+          });
       }
     };
-
-    fetchAuthRegions();
-  }, []);
-
-  const handleSearch = () => {
-    const searchRequest = {
-      nFormNumber: nFormNumber ? nFormNumber : null,
-      dtReceived: dtReceived ? dtReceived : null,
-      sAuthRegion: sAuthRegion ? sAuthRegion.sAuthRegion : null,
-      sName: sName ? sName : null,
-      sFathersName: sFathersName ? sFathersName : null,
-    };
-
-    console.log("Search Request:", searchRequest);
-    searchArray.push(searchRequest);
-    console.log("Request length: ", searchArray.length);
-    if (searchArray.length === 1) {
-      processRequest();
-    }
-    function processRequest() {
-      const currentRequest = searchArray[0];  // Get the first request to process
-    console.log("Processing request:", currentRequest);
-
-    const token = localStorage.getItem("token");
-
-    // Make an axios POST request
-    axios.post("http://localhost/api/MadebAuthRegionVM/ColumnSearchMadeb/madebType=1",
-      currentRequest,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      }
-    )
-      .then(response => {
-        console.log("Response from server:", response.data);
-        setData(response.data);
-        // You can handle response data here
-      })
-      .catch(error => {
-        console.error("Error making POST request:", error);
-        // Handle any errors here
-      })
-      .finally(() => {
-        // After request is processed, you can clear the array or remove processed requests
-        searchArray.shift();  // Remove the processed request
-      });
-    }
-  };
+    
   
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
+    }
+  };
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+  
+    if (!token) {
+      console.error("No token found. You need to log in.");
+      return;
+    }
+  
+    const payload = {
+      dtReceived: dtReceived || null,
+      nAuthRegionID: sAuthRegion ? sAuthRegion.id : null,
+      nFormNumber: nFormNumber || null,
+      nMadebStatusID: 1,
+      nMadebTypeID: 1,
+      sDocumentAttached: documentAttached ? "Yes" : "",
+      sFathersName: sFathersName || "",
+      sMadebStatusRemark: statusRemarks || "",
+      sName: sName || "",
+    };
+  
+    try {
+      const response = await axios.post(
+        "http://localhost/api/Madeb/AddMadeb/",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert("Madeb added successfully 💥")
+      console.log("Madeb added successfully", response.data);
+      
+      // Close the form after saving
+      setOpen(false);
+  
+      // Reset the form fields (optional)
+      setFormNumber("");
+      setReceivedDate("");
+      setSelectedAuthRegion("");
+      setFullName("");
+      setFatherName("");
+      setStatusRemarks("");
+      setSaneyFormNo("");
+      setDocumentAttached(false);
+  
+      // Refresh the table data to reflect the new entry
+      fetchData();
+      
+    } catch (error) {
+      console.error(
+        "Error adding Madeb:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -605,14 +677,6 @@ onMouseLeave={handleMouseLeave}
         >
           Logout
         </button>
-        <div style={{ position: 'fixed', top: '50px', right: '200px' }}>
-      <button
-      onClick={handleButtonClick} // Set the click handler
-      style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-      >
-        Click Me
-        </button>
-    </div>
       </div>
     </header>
     {/* ------------------------------------------------------>     */}
@@ -691,10 +755,173 @@ onMouseLeave={handleMouseLeave}
         />
       </Box>
     </Box>
+    <div
+  style={{
+    display: 'flex',
+    justifyContent: 'flex-end', // Aligns the buttons to the right
+    alignItems: 'center',
+    gap: '10px',  // Space between buttons
+    width: '100%', // Ensure the div takes full width of the container
+  }}
+>
+  <button
+    onClick={handleOpen}
+    title="Add Sarso Madeb" // Tooltip for the Add button
+    style={{
+      padding: '10px',
+      backgroundColor: '#007BFF',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center', // Center icon in button
+    }}
+  >
+    <AddIcon style={{ fontSize: '24px' }} /> {/* Add icon with adjusted size */}
+  </button>
+
+  <button
+    onClick={handleButtonClick}
+    title="Edit Sarso Madeb" // Tooltip for the Edit button
+    style={{
+      padding: '10px',
+      backgroundColor: '#007BFF',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center', // Center icon in button
+    }}
+  >
+    <EditIcon style={{ fontSize: '24px' }} /> {/* Edit icon with adjusted size */}
+  </button>
+</div>
+<Modal open={open} onClose={handleClose}>
+        <Box
+          sx={{
+            width: 600,
+            bgcolor: "background.paper",
+            border: "2px solid #000",
+            boxShadow: 24,
+            p: 4,
+            m: "auto",
+            mt: 10,
+          }}
+        >
+          <h2>Add New Madeb</h2>
+
+          {/* Form fields */}
+          {loading ? (
+            <CircularProgress />
+          ) : (
+            <>
+              <TextField
+                label="Form Number"
+                value={nFormNumber}
+                fullWidth
+                margin="normal"
+                disabled
+              />
+
+              <TextField
+                label="Received Date"
+                type="date"
+                value={dtReceived}
+                onChange={(e) => setReceivedDate(e.target.value)}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                select
+                label="Authority Region"
+                value={sAuthRegion}
+                onChange={(e) => setSelectedAuthRegion(e.target.value)}
+                fullWidth
+                margin="normal"
+              >
+                {AuthRegion.map((region) => (
+                  <MenuItem key={region.id} value={region}>
+                    {region.sAuthRegion}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                label="Name"
+                value={sName}
+                onChange={(e) => setFullName(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+
+              <TextField
+                label="Father's Name"
+                value={sFathersName}
+                onChange={(e) => setFatherName(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+
+              <TextField
+                label="Status Remarks"
+                value={statusRemarks}
+                onChange={(e) => setStatusRemarks(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+
+              <TextField
+                label="Saney Form No"
+                value={saneyFormNo}
+                onChange={(e) => setSaneyFormNo(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={documentAttached}
+                    onChange={(e) => setDocumentAttached(e.target.checked)}
+                  />
+                }
+                label="Document Attached"
+              />
+
+              {/* Buttons */}
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
+              >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSave}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleClose}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Modal>
     <div>
     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
         Sarso Madeb
       </Typography>
+      
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -746,195 +973,3 @@ onMouseLeave={handleMouseLeave}
 };
 
 export default Sarso;
-
-//-------------------------------------------------------------------->
-//Creating add sarso madeb modal!!!!!
-
-// import React, { useState, useEffect } from 'react';
-// import { Modal, Box, Button, TextField, MenuItem, CircularProgress, FormControlLabel, Checkbox } from '@mui/material';
-// import axios from 'axios';
-
-// const SarsoForm = () => {
-//   const [open, setOpen] = useState(false);
-//   const [loading, setLoading] = useState(false);
-//   const [formNumber, setFormNumber] = useState('');
-//   const [dtReceived, setReceivedDate] = useState('');
-//   const [sAuthRegion, setSelectedAuthRegion] = useState('');
-//   const [authRegions, setAuthRegions] = useState([]);
-//   const [sName, setFullName] = useState('');
-//   const [sFathersName, setFatherName] = useState('');
-//   const [madebStatus] = useState('In progress');  // Default status is 'In progress'
-//   const [statusRemarks, setStatusRemarks] = useState('');
-//   const [saneyFormNo, setSaneyFormNo] = useState('');
-//   const [documentAttached, setDocumentAttached] = useState(false);
-
-//   // Fetch the new form number and authority regions when the modal opens
-//   useEffect(() => {
-//     const fetchFormNumberAndRegions = async () => {
-//       setLoading(true);
-//       try {
-//         const token = localStorage.getItem('token');
-//         const response = await axios.get('http://localhost/api/Madeb/GetNewEmptyMadeb/?nMadebTypeId=1', {
-//           headers: { Authorization: `Bearer ${token}` },
-//         });
-//         setFormNumber(response.data.nFormNumber);
-//         setAuthRegions(response.data.authRegions);
-//       } catch (error) {
-//         console.error('Error fetching form number or authority regions:', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     if (open) {
-//       fetchFormNumberAndRegions();
-//     }
-//   }, [open]);
-
-//   const handleOpen = () => setOpen(true);
-//   const handleClose = () => setOpen(false);
-
-//   const handleSave = async () => {
-//     const payload = {
-//       nFormNumber: formNumber,
-//       dtReceived,
-//       sAuthRegion: sAuthRegion ? sAuthRegion.sAuthRegion : null,
-//       sName,
-//       sFathersName,
-//       madebStatus,
-//       statusRemarks,
-//       saneyFormNo,
-//       documentAttached,
-//     };
-
-//     try {
-//       const token = localStorage.getItem('token');
-//       console.log("---------> Chemes:", token);
-//    await axios.post('http://localhost/api/Madeb/AddMadeb/', payload, {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       alert('Madeb added successfully!');
-//       handleClose();  // Close the modal after saving
-//     } catch (error) {
-//       console.error('Error adding madeb:', error);
-//     }
-//   };
-
-//   return (
-//     <>
-//       {/* Button to open form, positioned at the top right */}
-//       <Button variant="contained" onClick={handleOpen} style={{ position: 'absolute', top: 20, right: 20 }}>
-//         Add Madeb
-//       </Button>
-
-//       {/* Modal for the form */}
-//       <Modal open={open} onClose={handleClose}>
-//         <Box
-//           sx={{
-//             width: 600,
-//             bgcolor: 'background.paper',
-//             border: '2px solid #000',
-//             boxShadow: 24,
-//             p: 4,
-//             m: 'auto',
-//             mt: 10,
-//           }}
-//         >
-//           <h2>Add New Madeb</h2>
-
-//           {/* Form fields */}
-//           {loading ? <CircularProgress /> : (
-//             <>
-//               <TextField
-//                 label="Form Number"
-//                 value={formNumber}
-//                 fullWidth
-//                 margin="normal"
-//                 disabled
-//               />
-
-//               <TextField
-//                 label="Received Date"
-//                 type="date"
-//                 value={dtReceived}
-//                 onChange={(e) => setReceivedDate(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//                 InputLabelProps={{ shrink: true }}
-//               />
-
-//               <TextField
-//                 select
-//                 label="Authority Region"
-//                 value={sAuthRegion}
-//                 onChange={(e) => setSelectedAuthRegion(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//               >
-//                 {authRegions.map((region) => (
-//                   <MenuItem key={region.id} value={region}>
-//                     {region.sAuthRegion}
-//                   </MenuItem>
-//                 ))}
-//               </TextField>
-
-//               <TextField
-//                 label="Name"
-//                 value={sName}
-//                 onChange={(e) => setFullName(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//               />
-
-//               <TextField
-//                 label="Father's Name"
-//                 value={sFathersName}
-//                 onChange={(e) => setFatherName(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//               />
-
-//               <TextField
-//                 label="Status Remarks"
-//                 value={statusRemarks}
-//                 onChange={(e) => setStatusRemarks(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//               />
-
-//               <TextField
-//                 label="Saney Form No"
-//                 value={saneyFormNo}
-//                 onChange={(e) => setSaneyFormNo(e.target.value)}
-//                 fullWidth
-//                 margin="normal"
-//               />
-
-//               <FormControlLabel
-//                 control={
-//                   <Checkbox
-//                     checked={documentAttached}
-//                     onChange={(e) => setDocumentAttached(e.target.checked)}
-//                   />
-//                 }
-//                 label="Document Attached"
-//               />
-
-//               {/* Buttons */}
-//               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-//                 <Button variant="contained" color="primary" onClick={handleSave}>
-//                   Save
-//                 </Button>
-//                 <Button variant="contained" color="secondary" onClick={handleClose}>
-//                   Cancel
-//                 </Button>
-//               </Box>
-//             </>
-//           )}
-//         </Box>
-//       </Modal>
-//     </>
-//   );
-// };
-
-// export default SarsoForm;
