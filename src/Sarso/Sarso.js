@@ -26,6 +26,7 @@ const Sarso = () => {
   const [AuthRegion, setAuthRegions] = useState([]);
   const [sAuthRegion, setSelectedAuthRegion] = useState(null);
   const [nFormNumber, setFormNumber] = useState('');
+  const [nsearchFormNumber, setSearchFormNumber] = useState('');
   const [sName, setFullName] = useState('');
   const [sFathersName, setFatherName] = useState('');
   const [dtReceived, setReceivedDate] = useState('');
@@ -121,11 +122,14 @@ const Sarso = () => {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
+              
             }
           );
+          
           if (response.data && Array.isArray(response.data.authRegions)) {
+            
             setAuthRegions(response.data.authRegions);
-            setFormNumber(response.data.nFormNumber);
+            setSearchFormNumber(response.data.nFormNumber);
           } else {
             console.error("Unexpected API response structure", response.data);
             setAuthRegions([]);
@@ -213,7 +217,7 @@ const Sarso = () => {
     const payload = {
       dtReceived: dtReceived || null,
       nAuthRegionID: sAuthRegion ? sAuthRegion.id : null,
-      nFormNumber: nFormNumber || null,
+      nsearchFormNumber: nsearchFormNumber || null,
       nMadebStatusID: 1,
       nMadebTypeID: 1,
       sDocumentAttached: documentAttached ? "Yes" : "",
@@ -239,7 +243,7 @@ const Sarso = () => {
       setOpen(false);
   
       // Reset the form fields (optional)
-      setFormNumber("");
+      setSearchFormNumber("");
       setReceivedDate("");
       setSelectedAuthRegion("");
       setFullName("");
@@ -781,24 +785,6 @@ onMouseLeave={handleMouseLeave}
   >
     <AddIcon style={{ fontSize: '24px' }} /> {/* Add icon with adjusted size */}
   </button>
-
-  <button
-    onClick={handleButtonClick}
-    title="Edit Sarso Madeb" // Tooltip for the Edit button
-    style={{
-      padding: '10px',
-      backgroundColor: '#007BFF',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center', // Center icon in button
-    }}
-  >
-    <EditIcon style={{ fontSize: '24px' }} /> {/* Edit icon with adjusted size */}
-  </button>
 </div>
 <Modal open={open} onClose={handleClose}>
         <Box
@@ -821,7 +807,7 @@ onMouseLeave={handleMouseLeave}
             <>
               <TextField
                 label="Form Number"
-                value={nFormNumber}
+                value={nsearchFormNumber}
                 fullWidth
                 margin="normal"
                 disabled
