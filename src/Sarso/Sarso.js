@@ -56,24 +56,44 @@ const Sarso = () => {
   const handleEditSave = async () => {
     try {
       const token = localStorage.getItem("token");
+      console.log("Token retrieved from localStorage:", token);
+  
+      if (!token) {
+        alert("No token found. Please log in again.");
+        return; // Stop execution if no token
+      }
+  
+      const payload = {
+        ...editRow.madeb,
+        nAuthRegionID: editRow.sAuthRegion?.id || null,
+      };
+      console.log("Payload sent to EditMadeb API:", payload);
+  
       const response = await axios.post(
-        `http://localhost/api/Madeb`,
-        {
-          ...editRow.madeb,
-        },
+        `http://localhost/api/Madeb/EditMadeb/ID=${editRow.madeb.id}`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+  
+      console.log("Edit API response:", response.data);
       alert("Record updated successfully");
-      fetchData();
+      fetchData(); // Refresh the table data
       handleEditClose();
     } catch (error) {
       console.error("Error updating record:", error);
+  
+      if (error.response?.status === 401) {
+        alert("Session expired. Please log in again.");
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
     }
   };
+  
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -123,13 +143,14 @@ const Sarso = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost/api/MadebAuthRegionVM/GetMadebsByType/MadebType%3D1", 
+          "http://localhost/api/MadebAuthRegionVM/GetMadebsByType/MadebType%3D1",
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
+        console.log("------>:", response.data);
         setData(response.data);
       } catch (error) {
         if (error.response && error.response.status === 401) {
@@ -1047,9 +1068,9 @@ onMouseLeave={handleMouseLeave}
   options={AuthRegion}
   getOptionLabel={(option) => option.sAuthRegion || ""}
   isOptionEqualToValue={(option, value) =>
-    option.sAuthRegion === value.sAuthRegion
-  } // Ensure correct matching
-  value={editRow?.sAuthRegion || null} // Prefill with the matched region
+    option.id === value.id // Match by ID
+  }
+  value={editRow?.sAuthRegion || null} // Prefill the selected region
   onChange={(event, newValue) =>
     setEditRow({ ...editRow, sAuthRegion: newValue })
   }
