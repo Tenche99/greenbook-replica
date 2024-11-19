@@ -33,12 +33,47 @@ const Sarso = () => {
   const [statusRemarks, setStatusRemarks] = useState("");
   const [saneyFormNo, setSaneyFormNo] = useState("");
   const [documentAttached, setDocumentAttached] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRow, setEditRow] = useState(null);
+
   const navigate = useNavigate();
 
   const handleButtonClick = () => {
     navigate('/Sarso/AddSarsoMadeb');
   };
 
+  const handleEditOpen = (row) => {
+    const selectedRegion = AuthRegion.find(
+      (region) => region.sAuthRegion === row.sAuthRegion
+    );
+    setEditRow({ ...row, sAuthRegion: selectedRegion || null });
+    setEditOpen(true);
+  };
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setEditRow(null);
+  };
+  const handleEditSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `http://localhost/api/Madeb`,
+        {
+          ...editRow.madeb,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert("Record updated successfully");
+      fetchData();
+      handleEditClose();
+    } catch (error) {
+      console.error("Error updating record:", error);
+    }
+  };
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -947,10 +982,142 @@ onMouseLeave={handleMouseLeave}
                 <TableCell>{row.madeb.dtReturnEmail}</TableCell>
                 <TableCell>{row.madeb.dtReject}</TableCell>
                 <TableCell>{row.madeb.dtEmailSend}</TableCell>
+                <TableCell>
+                  <EditIcon 
+                    onClick={() => handleEditOpen(row)}
+                    style={{ cursor: "pointer", color: "blue" }}
+                    />
+                </TableCell>
                 
               </TableRow>
             ))}
           </TableBody>
+          <Modal open = {editOpen} onClose={handleEditClose}>
+          <Box
+    sx={{
+      width: 600,
+      bgcolor: "background.paper",
+      border: "2px solid #000",
+      boxShadow: 24,
+      p: 4,
+      m: "auto",
+      mt: 10,
+    }}
+  >
+    <h2>Edit Madeb</h2>
+    {editRow && (
+      <>
+        <TextField
+          label="Form Number"
+          value={editRow.madeb.nFormNumber}
+          onChange={(e) =>
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, nFormNumber: e.target.value },
+            })
+          }
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Full Name"
+          value={editRow.madeb.sName}
+          onChange={(e) =>
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, sName: e.target.value },
+            })
+          }
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Date Received"
+          value={editRow.madeb.dtReceived}
+          onChange={(e) => 
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, dtReceived: e.target.value},
+            })
+          }
+          fullWidth
+          margin="normal"
+          />
+          <Autocomplete
+  options={AuthRegion}
+  getOptionLabel={(option) => option.sAuthRegion || ""}
+  isOptionEqualToValue={(option, value) =>
+    option.sAuthRegion === value.sAuthRegion
+  } // Ensure correct matching
+  value={editRow?.sAuthRegion || null} // Prefill with the matched region
+  onChange={(event, newValue) =>
+    setEditRow({ ...editRow, sAuthRegion: newValue })
+  }
+  renderInput={(params) => (
+    <TextField {...params} label="Authority Region" margin="normal" />
+  )}
+  disableClearable
+/>
+          <TextField
+          label="Father Name"
+          value={editRow.madeb.sFathersName}
+          onChange={(e) => 
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, sFathersName: e.target.value},
+            })
+          }
+          fullWidth
+          margin="normal"
+          />
+          <TextField
+          label="status remarks"
+          value={editRow.madeb.statusRemarks}
+          onChange={(e) => 
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, statusRemarks: e.target.value},
+            })
+          }
+          fullWidth
+          margin="normal"
+          />
+          <TextField
+          label="Saney Form No"
+          value={editRow.madeb.nSaneyFormNo}
+          onChange={(e) => 
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, nSaneyFormNo: e.target.value},
+            })
+          }
+          fullWidth
+          margin="normal"
+          />
+          <TextField
+          label="Document Attached"
+          value={editRow.madeb.documentAttached}
+          onChange={(e) => 
+            setEditRow({
+              ...editRow,
+              madeb: { ...editRow.madeb, documentAttached: e.target.value},
+            })
+          }
+          fullWidth
+          margin="normal"
+          />
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+          <Button variant="contained" color="primary" onClick={handleEditSave}>
+            Save
+          </Button>
+          <Button variant="contained" color="secondary" onClick={handleEditClose}>
+            Cancel
+          </Button>
+        </Box>
+      </>
+    )}
+  </Box>
+          </Modal>
         </Table>
       </TableContainer>
     </div>
